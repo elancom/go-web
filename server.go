@@ -225,6 +225,11 @@ func (s *Server) Init() *Server {
 	return s
 }
 
+// Listen Init app.Listen(":8080") app.Listen("127.0.0.1:8080")
+func (s *Server) Listen(addr string) error {
+	return s.App.Listen(addr)
+}
+
 func (s *Server) newFiber() *fiber.App {
 	config := fiber.Config{
 		// 禁止内部异常发送至外部
