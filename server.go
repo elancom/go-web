@@ -81,7 +81,7 @@ func (s *Server) Init() *Server {
 			log.Println("[错误消息]", err)
 			return c.JSON(err)
 		}
-		if err == NotFound {
+		if err == lang.NotFound {
 			return c.JSON(lang.NewErr("resource not found"))
 		}
 		return err
