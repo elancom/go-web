@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"github.com/elancom/go-util/bytes"
 	"github.com/elancom/go-util/crypto"
+	"github.com/elancom/go-util/json"
 	"github.com/elancom/go-util/lang"
 	"github.com/elancom/go-util/sign"
 	"github.com/elancom/go-util/str"
@@ -78,11 +79,13 @@ func (s *Server) Init() *Server {
 		err := c.Next()
 
 		if _, ok := err.(*lang.Msg); ok {
-			log.Println("[返回JSON消息]", err)
+			js, _ := json.ToJson(err)
+			log.Println("[返回JSON消息]", js)
 			return c.JSON(err)
 		}
 		if err == lang.NotFound {
-			log.Println("[返回JSON消息]", err.Error())
+			js, _ := json.ToJson(err)
+			log.Println("[返回JSON消息]", js)
 			return c.JSON(lang.NewErr(err.Error()))
 		}
 		if _, ok := err.(*Text); ok {
