@@ -86,9 +86,9 @@ func (s *Server) Init() *Server {
 			return c.JSON(lang.NewErr(err.Error()))
 		}
 		if _, ok := err.(*Text); ok {
+			log.Println("[返回文本消息]", err.Error())
 			c.Response().Header.SetContentType(fiber.MIMETextPlain)
-			log.Println("[返回文本消息]", []byte(err.Error()))
-			return c.Send([]byte(err.Error()))
+			return c.SendString(err.Error())
 		}
 
 		return err
