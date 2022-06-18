@@ -17,7 +17,7 @@ const loginUrl = "/login/"
 var defConfig = Config{
 	SignEnable: true,
 	AuthEnable: true,
-	EncEnable:  false,
+	EncEnable:  true,
 }
 
 func NewText(text string) *Text {
