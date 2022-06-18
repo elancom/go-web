@@ -78,12 +78,19 @@ func (s *Server) Init() *Server {
 		err := c.Next()
 
 		if _, ok := err.(*lang.Msg); ok {
-			log.Println("[错误消息]", err)
+			log.Println("[返回JSON消息]", err)
 			return c.JSON(err)
 		}
 		if err == lang.NotFound {
-			return c.JSON(lang.NewErr("resource not found"))
+			log.Println("[返回JSON消息]", err.Error())
+			return c.JSON(lang.NewErr(err.Error()))
 		}
+		if _, ok := err.(*Text); ok {
+			c.Response().Header.SetContentType(fiber.MIMETextPlain)
+			log.Println("[返回文本消息]", []byte(err.Error()))
+			return c.Send([]byte(err.Error()))
+		}
+
 		return err
 	})
 
