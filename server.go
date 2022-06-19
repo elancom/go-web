@@ -139,24 +139,23 @@ func (s *Server) Init() *Server {
 			return c.Next()
 		}
 		if principal.Secret == "" {
-			return lang.NewErr("use x-enc, but secret not found")
+			return lang.NewErr("use x-sign, but secret not found")
 		}
 
 		xSign := c.Get("x-sign")
-		log.Println("x-sign", xSign)
 		if str.IsBlank(xSign) {
 			return lang.NewErr("x-sign err")
 		}
 
+		// 取内容
+		ss := ""
 		switch c.Method() {
 		case http.MethodGet:
 			qs := c.Request().URI().QueryString()
 			if len(qs) == 0 {
 				return lang.NewErr("qs err")
 			}
-			if !sign.CheckStr(string(qs), principal.Secret, xSign) {
-				return lang.NewErr("sign err")
-			}
+			ss = string(qs)
 		case http.MethodPost:
 			body := c.Body()
 			if len(body) > 0 {
@@ -165,9 +164,12 @@ func (s *Server) Init() *Server {
 			if len(body) == 0 {
 				return lang.NewErr("body err")
 			}
-			if !sign.CheckStr(string(body), principal.Secret, xSign) {
-				return lang.NewErr("sign err")
-			}
+		}
+
+		log.Println("[sign]字符串", ss)
+		log.Println("[sign]签名", xSign)
+		if !sign.CheckStr(ss, principal.Secret, xSign) {
+			return lang.NewErr("sign err")
 		}
 
 		return c.Next()
