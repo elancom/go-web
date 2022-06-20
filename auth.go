@@ -21,7 +21,7 @@ type UserPrincipal struct {
 	Timestamp int64  `json:"timestamp"` // 时间戳(毫秒)
 }
 
-func MakeUserPrincipal(id int64, username string, secret string) (string, error) {
+func MakeToken(id int64, username string, secret string, aesKey []byte) (string, error) {
 	principal := UserPrincipal{
 		Id:        id,
 		Username:  username,
@@ -35,7 +35,7 @@ func MakeUserPrincipal(id int64, username string, secret string) (string, error)
 		return "", err
 	}
 
-	encrypt, err := crypto.AesEcbEncrypt(marshal, []byte("1234567890123456"))
+	encrypt, err := crypto.AesEcbEncrypt(marshal, aesKey)
 	if err != nil {
 		return "", errors.New("encrypt(0)")
 	}
