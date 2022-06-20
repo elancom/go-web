@@ -50,27 +50,27 @@ func MakeToken(id int64, username string, secret string, aesKey []byte) (string,
 
 func GetUserPrincipal(token string) (*UserPrincipal, error) {
 	if str.IsBlank(token) {
-		return nil, errors.New("token error")
+		return nil, errors.New("token err")
 	}
 
 	tokenBytes, err := base64.StdEncoding.DecodeString(token)
 	if err != nil {
-		return nil, errors.New("token error(DC)")
+		return nil, errors.New("token err(DC)")
 	}
 
 	decrypt, err := crypto.AesEcbDecrypt(tokenBytes, []byte("1234567890123456"))
 	if err != nil {
-		return nil, errors.New("token error(0)")
+		return nil, errors.New("token err(0)")
 	}
 
 	principal := UserPrincipal{}
 	err = json.Unmarshal(decrypt, &principal)
 	if err != nil {
-		return nil, errors.New("token error(1)")
+		return nil, errors.New("token err(1)")
 	}
 
 	if principal.Id == 0 || str.IsBlank(principal.Username) || str.IsBlank(principal.Key) || principal.Timestamp == 0 {
-		return nil, errors.New("token error(2)")
+		return nil, errors.New("token err(2)")
 	}
 
 	return &principal, nil
@@ -81,7 +81,7 @@ func parseUserPrincipal(c *fiber.Ctx) (*UserPrincipal, error) {
 	token = str.Trim(token)
 
 	if str.IsBlank(token) {
-		return nil, lang.NewErr("token error(B)")
+		return nil, lang.NewErr("token err(B)")
 	}
 
 	principal, err := GetUserPrincipal(token)
