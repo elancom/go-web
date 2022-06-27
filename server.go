@@ -13,8 +13,6 @@ import (
 	"net/http"
 )
 
-const loginUrl = "/login/"
-
 var defConfig = Config{
 	SignEnable: true,
 	AuthEnable: true,
@@ -23,16 +21,16 @@ var defConfig = Config{
 
 func NewText(text string) *Text {
 	t := new(Text)
-	t.Text = text
+	t.text = text
 	return t
 }
 
 type Text struct {
-	Text string
+	text string
 }
 
 func (t *Text) Error() string {
-	return t.Text
+	return t.text
 }
 
 func NewServer(config ...Config) *Server {
@@ -74,9 +72,24 @@ func (s *Server) SetHumanUrls(urls []string) {
 func (s *Server) Init() *Server {
 	s.App = s.newFiber()
 
+	// 加密字符串
+	encStr := func(principal *UserPrincipal, s string) (string, error) {
+		sb, encErr := crypto.AesEcbEncrypt([]byte(s), []byte(principal.Secret))
+		if encErr != nil {
+			return "", lang.NewErr("enc err")
+		}
+		return base64.StdEncoding.EncodeToString(sb), nil
+	}
+
 	// 消息处理
 	s.App.Use(func(c *fiber.Ctx) error {
+		log.Println("处理")
 		err := c.Next()
+		log.Println("处理after")
+
+		if err == nil {
+			err = lang.NewErr("处理器响应空消息")
+		}
 
 		if _, ok := err.(*lang.Msg); ok {
 			js, _ := json.ToJson(err)
@@ -97,6 +110,67 @@ func (s *Server) Init() *Server {
 		return err
 	})
 
+	// 加密
+	s.App.Use(func(c *fiber.Ctx) error {
+		log.Println("加密")
+		err := c.Next()
+		log.Println("加密after")
+
+		if err == nil {
+			return err
+		}
+
+		if !s.config.EncEnable {
+			return err
+		}
+
+		if str.HasPrefix(c.Path(), "/login") {
+			return err
+		}
+
+		userPrincipal, ok := c.Context().Value("principal").(*UserPrincipal)
+		if !ok {
+			return lang.NewErr("user not found")
+		}
+
+		var body any
+		switch err.(type) {
+		case *Text:
+			log.Println("[将要加密文本]", err.Error())
+			body = err.Error()
+		case *lang.Msg:
+			js, _ := json.ToJson(err)
+			log.Println("[将要加密JSON]", js)
+			body = err
+		default:
+			if err == lang.NotFound {
+				js, _ := json.ToJson(err)
+				log.Println("[将要加密JSON]", js)
+				body = lang.NewErr(err.Error())
+			}
+		}
+
+		// 加密 转字符串
+		encSs := ""
+		switch body.(type) {
+		case string:
+		default:
+			toJson, jsErr := json.ToJson(body)
+			if jsErr != nil {
+				return jsErr
+			}
+			encSs = toJson
+		}
+		encSs, encErr := encStr(userPrincipal, encSs)
+		if encErr != nil {
+			log.Println("[enc]加密错误")
+			return err
+		}
+		body = encSs
+
+		return NewText(body.(string))
+	})
+
 	// 认证
 	s.App.Use(func(c *fiber.Ctx) error {
 		if !s.config.AuthEnable {
@@ -105,7 +179,7 @@ func (s *Server) Init() *Server {
 
 		path := c.Path()
 		if len(path) > 0 {
-			if str.HasPrefix(path, loginUrl) {
+			if str.HasPrefix(path, "/login/") {
 				return c.Next()
 			}
 			if len(s.humanUrls) > 0 {

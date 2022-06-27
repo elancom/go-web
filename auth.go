@@ -63,8 +63,8 @@ func GetUserPrincipal(token string) (*UserPrincipal, error) {
 		return nil, errors.New("token err(0)")
 	}
 
-	principal := UserPrincipal{}
-	err = json.Unmarshal(decrypt, &principal)
+	principal := new(UserPrincipal)
+	err = json.Unmarshal(decrypt, principal)
 	if err != nil {
 		return nil, errors.New("token err(1)")
 	}
@@ -73,7 +73,7 @@ func GetUserPrincipal(token string) (*UserPrincipal, error) {
 		return nil, errors.New("token err(2)")
 	}
 
-	return &principal, nil
+	return principal, nil
 }
 
 func parseUserPrincipal(c *fiber.Ctx) (*UserPrincipal, error) {
