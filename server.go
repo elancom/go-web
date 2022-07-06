@@ -168,6 +168,9 @@ func (s *Server) Init() *Server {
 		}
 		body = encSs
 
+		// 标记加密头
+		c.Response().Header.Set("x-enc", "1")
+
 		return NewText(body.(string))
 	})
 
