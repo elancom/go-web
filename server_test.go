@@ -12,6 +12,11 @@ import (
 	"time"
 )
 
+func Test1(t *testing.T) {
+	var s []string = nil
+	log.Println(len(s))
+}
+
 func TestName(t *testing.T) {
 	server := NewServer(Config{
 		SignEnable: false,

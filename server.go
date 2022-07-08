@@ -17,6 +17,8 @@ var defConfig = Config{
 	SignEnable: true,
 	AuthEnable: true,
 	EncEnable:  true,
+	// 地址过来
+	ignoreUrls: make([]string, 0),
 }
 
 func NewText(text string) *Text {
@@ -35,7 +37,7 @@ func (t *Text) Error() string {
 
 func NewServer(config ...Config) *Server {
 	s := new(Server)
-	s.humanUrls = make([]string, 0)
+	s.ignoreUrls = make([]string, 0)
 
 	var conf = defConfig
 	if len(config) > 0 {
@@ -45,28 +47,37 @@ func NewServer(config ...Config) *Server {
 		SignEnable: conf.SignEnable,
 		AuthEnable: conf.AuthEnable,
 		EncEnable:  conf.EncEnable,
+		ignoreUrls: conf.ignoreUrls,
 	}
+
+	// 权限忽略地址
+	s.setIgnoreUrls(s.config.ignoreUrls)
+
 	return s
 }
 
 type Config struct {
-	AuthEnable bool // TK认证
-	SignEnable bool // 签名认证(依赖TK认证)
-	EncEnable  bool // 加密
+	AuthEnable bool     // TK认证
+	SignEnable bool     // 签名认证(依赖TK认证)
+	EncEnable  bool     // 加密
+	ignoreUrls []string // 忽略地址
 }
 
 type Server struct {
-	App       *fiber.App
-	config    Config
-	humanUrls []string // prefix
+	App        *fiber.App
+	config     Config
+	ignoreUrls []string // 如果很多再用map
 }
 
-func (s *Server) SetHumanUrls(urls []string) {
-	humanUrls := make([]string, len(urls))
-	for _, url := range urls {
-		humanUrls = append(humanUrls, url)
+func (s *Server) setIgnoreUrls(urls []string) {
+	if len(urls) == 0 {
+		return
 	}
-	s.humanUrls = humanUrls
+	ignoreUrls := make([]string, len(urls))
+	for _, url := range urls {
+		ignoreUrls = append(ignoreUrls, url)
+	}
+	s.ignoreUrls = ignoreUrls
 }
 
 func (s *Server) Init() *Server {
@@ -180,13 +191,14 @@ func (s *Server) Init() *Server {
 			return c.Next()
 		}
 
+		// 地址匹配
 		path := c.Path()
 		if len(path) > 0 {
 			if str.HasPrefix(path, "/login/") {
 				return c.Next()
 			}
-			if len(s.humanUrls) > 0 {
-				for _, url := range s.humanUrls {
+			if len(s.ignoreUrls) > 0 {
+				for _, url := range s.ignoreUrls {
 					if str.HasPrefix(url, path) {
 						return c.Next()
 					}
