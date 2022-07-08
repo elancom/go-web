@@ -18,7 +18,7 @@ var defConfig = Config{
 	AuthEnable: true,
 	EncEnable:  true,
 	// 地址过来
-	ignoreUrls: make([]string, 0),
+	IgnoreUrls: make([]string, 0),
 }
 
 func NewText(text string) *Text {
@@ -47,11 +47,11 @@ func NewServer(config ...Config) *Server {
 		SignEnable: conf.SignEnable,
 		AuthEnable: conf.AuthEnable,
 		EncEnable:  conf.EncEnable,
-		ignoreUrls: conf.ignoreUrls,
+		IgnoreUrls: conf.IgnoreUrls,
 	}
 
 	// 权限忽略地址
-	s.setIgnoreUrls(s.config.ignoreUrls)
+	s.setIgnoreUrls(s.config.IgnoreUrls)
 
 	return s
 }
@@ -60,7 +60,7 @@ type Config struct {
 	AuthEnable bool     // TK认证
 	SignEnable bool     // 签名认证(依赖TK认证)
 	EncEnable  bool     // 加密
-	ignoreUrls []string // 忽略地址
+	IgnoreUrls []string // 忽略地址
 }
 
 type Server struct {
