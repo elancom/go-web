@@ -107,6 +107,23 @@ func UseUser(handle HandleP1[*UserPrincipal]) fiber.Handler {
 	return Bind1(handle, ResolveUser)
 }
 
+// UseUserParam UseUser 注入用户
+func UseUserParam(handle HandleP2[*UserPrincipal, string], name string) fiber.Handler {
+	return Bind2(handle, ResolveUser, ResolveParam(name))
+}
+
+// UseUserParam2 UseUser 注入用户
+func UseUserParam2(handle HandleP3[*UserPrincipal, string, string], name1 string, name2 string) fiber.Handler {
+	creator := newParamFuncCreator()
+	return Bind3(handle, ResolveUser, creator(name1), creator(name2))
+}
+
+// UseUserParam3 UseUser 注入用户
+func UseUserParam3(handle HandleP4[*UserPrincipal, string, string, string], name1 string, name2 string, name3 string) fiber.Handler {
+	creator := newParamFuncCreator()
+	return Binds(handle, ResolveUser, creator(name1), creator(name2), creator(name3))
+}
+
 // ResolveOptUser 用户解析(可选)
 func ResolveOptUser(c *fiber.Ctx) (*UserPrincipal, error) {
 	user, err := ResolveUser(c)

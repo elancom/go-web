@@ -229,23 +229,8 @@ func UsePageParam2(handle HandleP3[*lang.Page, string, string], name1 string, na
 }
 
 func UsePageParam3(handle HandleP4[*lang.Page, string, string, string], name1, name2, name3 string) fiber.Handler {
-	var params *param.Params // 防重复解析参数
-	f := func(name string) Resolver[string] {
-		return func(c *fiber.Ctx) (string, error) {
-			if str.IsBlank(name) {
-				return "", nil
-			}
-			if params == nil {
-				p, err := ResolveParams(c)
-				if err != nil {
-					return "", err
-				}
-				params = p
-			}
-			return params.Get(name), nil
-		}
-	}
-	return Binds(handle, ResolvePage, f(name1), f(name2), f(name3))
+	creator := newParamFuncCreator()
+	return Binds(handle, ResolvePage, creator(name1), creator(name2), creator(name3))
 }
 
 func UsePageCountParam(handle HandleP3[*lang.Page, bool, string], name string) fiber.Handler {
@@ -267,6 +252,27 @@ func ResolveFlag(c *fiber.Ctx) (*lang.Flag, error) {
 	f.IsSummary = isSummary
 	f.IsList = isList
 	return f, nil
+}
+
+// 参数解析器构建器
+func newParamFuncCreator() func(name string) Resolver[string] {
+	var params *param.Params // 防重复解析参数
+	f := func(name string) Resolver[string] {
+		return func(c *fiber.Ctx) (string, error) {
+			if str.IsBlank(name) {
+				return "", nil
+			}
+			if params == nil {
+				p, err := ResolveParams(c)
+				if err != nil {
+					return "", err
+				}
+				params = p
+			}
+			return params.Get(name), nil
+		}
+	}
+	return f
 }
 
 // Bind0 绑定1个参数
