@@ -185,6 +185,18 @@ func (s *Server) Init() *Server {
 		return NewText(body.(string))
 	})
 
+	// 错误转换
+	s.App.Use(func(c *fiber.Ctx) error {
+		err := c.Next()
+		if e, ok := err.(*fiber.Error); ok {
+			// http://www.ab173.com/doc/httpstate.php
+			if e.Code == http.StatusMethodNotAllowed {
+				err = lang.NewErr("Method Not Allowed")
+			}
+		}
+		return err
+	})
+
 	// 认证
 	s.App.Use(func(c *fiber.Ctx) error {
 		if !s.config.AuthEnable {
