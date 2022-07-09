@@ -124,6 +124,11 @@ func UseUserParam3(handle HandleP4[*UserPrincipal, string, string, string], name
 	return Binds(handle, ResolveUser, creator(name1), creator(name2), creator(name3))
 }
 
+// UseUserBody UseUser 注入用户
+func UseUserBody[T any](handle HandleP2[*UserPrincipal, T], supplier Supplier[T]) fiber.Handler {
+	return Bind2(handle, ResolveUser, ResolveBody[T](supplier))
+}
+
 // ResolveOptUser 用户解析(可选)
 func ResolveOptUser(c *fiber.Ctx) (*UserPrincipal, error) {
 	user, err := ResolveUser(c)
