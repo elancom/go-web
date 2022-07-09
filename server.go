@@ -253,6 +253,7 @@ func (s *Server) Init() *Server {
 			if len(body) == 0 {
 				return lang.NewErr("body err")
 			}
+			ss = string(body)
 		}
 
 		log.Println("[sign]字符串", ss)
