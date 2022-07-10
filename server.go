@@ -5,7 +5,7 @@ import (
 	"github.com/elancom/go-util/bytes"
 	"github.com/elancom/go-util/crypto"
 	"github.com/elancom/go-util/json"
-	"github.com/elancom/go-util/lang"
+	. "github.com/elancom/go-util/lang"
 	"github.com/elancom/go-util/sign"
 	"github.com/elancom/go-util/str"
 	"github.com/gofiber/fiber/v2"
@@ -87,7 +87,7 @@ func (s *Server) Init() *Server {
 	encStr := func(principal *UserPrincipal, s string) (string, error) {
 		sb, encErr := crypto.AesEcbEncrypt([]byte(s), []byte(principal.Secret))
 		if encErr != nil {
-			return "", lang.NewErr("enc err")
+			return "", NewErr("enc err")
 		}
 		return base64.StdEncoding.EncodeToString(sb), nil
 	}
@@ -99,24 +99,21 @@ func (s *Server) Init() *Server {
 		log.Println("处理after")
 
 		if err == nil {
-			err = lang.NewErr("处理器响应空消息")
+			err = NewErr("处理器响应空消息")
 		}
 
-		if _, ok := err.(*lang.Msg); ok {
+		if _, ok := err.(*Msg); ok {
 			js, _ := json.ToJson(err)
 			log.Println("[返回JSON消息]", js)
 			return c.JSON(err)
-		}
-		if err == lang.NotFound {
-			js, _ := json.ToJson(err)
-			log.Println("[返回JSON消息]", js)
-			return c.JSON(lang.NewErr(err.Error()))
 		}
 		if _, ok := err.(*Text); ok {
 			log.Println("[返回文本消息]", err.Error())
 			c.Response().Header.SetContentType(fiber.MIMETextPlain)
 			return c.SendString(err.Error())
 		}
+
+		// 未知错误
 
 		return err
 	})
@@ -141,7 +138,7 @@ func (s *Server) Init() *Server {
 
 		userPrincipal, ok := c.Context().Value("principal").(*UserPrincipal)
 		if !ok {
-			return lang.NewErr("user not found")
+			return NewErr("user not found")
 		}
 
 		var body any
@@ -149,16 +146,13 @@ func (s *Server) Init() *Server {
 		case *Text:
 			log.Println("[将要加密文本]", err.Error())
 			body = err.Error()
-		case *lang.Msg:
+		case *Msg:
 			js, _ := json.ToJson(err)
 			log.Println("[将要加密JSON]", js)
 			body = err
 		default:
-			if err == lang.NotFound {
-				js, _ := json.ToJson(err)
-				log.Println("[将要加密JSON]", js)
-				body = lang.NewErr(err.Error())
-			}
+			// 未知错误
+			return err
 		}
 
 		// 加密 转字符串
@@ -189,10 +183,13 @@ func (s *Server) Init() *Server {
 	s.App.Use(func(c *fiber.Ctx) error {
 		err := c.Next()
 		if e, ok := err.(*fiber.Error); ok {
-			// http://www.ab173.com/doc/httpstate.php
 			if e.Code == http.StatusMethodNotAllowed {
-				err = lang.NewErr("Method Not Allowed")
+				err = NewErr("Method Not Allowed")
 			}
+		} else if err == NotFound { // 不存在
+			err = NewErr(err.Error())
+		} else if err == NotAuthorized { // 无权限
+			err = NewErr(err.Error())
 		}
 		return err
 	})
@@ -240,12 +237,12 @@ func (s *Server) Init() *Server {
 			return c.Next()
 		}
 		if principal.Secret == "" {
-			return lang.NewErr("use x-sign, but secret not found")
+			return NewErr("use x-sign, but secret not found")
 		}
 
 		xSign := c.Get("x-sign")
 		if str.IsBlank(xSign) {
-			return lang.NewErr("x-sign err")
+			return NewErr("x-sign err")
 		}
 
 		// 取内容
@@ -254,7 +251,7 @@ func (s *Server) Init() *Server {
 		case http.MethodGet:
 			qs := c.Request().URI().QueryString()
 			if len(qs) == 0 {
-				return lang.NewErr("qs err")
+				return NewErr("qs err")
 			}
 			ss = string(qs)
 		case http.MethodPost:
@@ -263,7 +260,7 @@ func (s *Server) Init() *Server {
 				body = bytes.TrimUint8(body, 34) // 34:双引号
 			}
 			if len(body) == 0 {
-				return lang.NewErr("body err")
+				return NewErr("body err")
 			}
 			ss = string(body)
 		}
@@ -271,7 +268,7 @@ func (s *Server) Init() *Server {
 		log.Println("[sign]字符串", ss)
 		log.Println("[sign]签名", xSign)
 		if !sign.CheckStr(ss, principal.Secret, xSign) {
-			return lang.NewErr("sign err")
+			return NewErr("sign err")
 		}
 
 		return c.Next()
@@ -291,10 +288,10 @@ func (s *Server) Init() *Server {
 		// 从tk中取加密秘钥
 		principal, ok := c.Context().Value("principal").(*UserPrincipal)
 		if !ok {
-			return lang.NewErr("use x-enc, but not found principal")
+			return NewErr("use x-enc, but not found principal")
 		}
 		if principal.Secret == "" {
-			return lang.NewErr("use x-enc, but secret not found")
+			return NewErr("use x-enc, but secret not found")
 		}
 
 		// 解密
@@ -309,7 +306,7 @@ func (s *Server) Init() *Server {
 				}
 				decrypt, err := crypto.AesEcbDecrypt(d3b, []byte(principal.Secret))
 				if err != nil {
-					return lang.NewErr("dec err")
+					return NewErr("dec err")
 				}
 				log.Println("解密:", string(decrypt))
 				c.Request().URI().SetQueryStringBytes(decrypt)
@@ -325,7 +322,7 @@ func (s *Server) Init() *Server {
 				}
 				decrypt, err := crypto.AesEcbDecrypt(bbs, []byte(principal.Secret))
 				if err != nil {
-					return lang.NewErr("dec err")
+					return NewErr("dec err")
 				}
 				log.Println("解密:", string(decrypt))
 				// 修改内容及长度
@@ -349,7 +346,7 @@ func (s *Server) newFiber() *fiber.App {
 		// 禁止内部异常发送至外部
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			log.Println("[系统错误]", err)
-			return c.JSON(lang.NewErr("InternalServerError"))
+			return c.JSON(NewErr("InternalServerError"))
 		}}
 	fa := fiber.New(config)
 	return fa
