@@ -102,6 +102,7 @@ func (s *Server) Init() *Server {
 			AllowHeaders:     s.config.AllowHeaders,
 			AllowMethods:     s.config.AllowMethods,
 			AllowCredentials: s.config.AllowCredentials,
+			ExposeHeaders:    s.config.ExposeHeaders,
 			MaxAge:           s.config.MaxAge,
 		}))
 	}
