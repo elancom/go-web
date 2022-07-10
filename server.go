@@ -9,6 +9,7 @@ import (
 	"github.com/elancom/go-util/sign"
 	"github.com/elancom/go-util/str"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"log"
 	"net/http"
 )
@@ -17,8 +18,12 @@ var defConfig = Config{
 	SignEnable: true,
 	AuthEnable: true,
 	EncEnable:  true,
+
 	// 地址过来
 	IgnoreUrls: make([]string, 0),
+
+	// 跨域配置
+	CorsEnable: false,
 }
 
 func NewText(text string) *Text {
@@ -61,6 +66,15 @@ type Config struct {
 	SignEnable bool     // 签名认证(依赖TK认证)
 	EncEnable  bool     // 加密
 	IgnoreUrls []string // 忽略地址
+
+	// 跨域配置
+	CorsEnable       bool // 是否开启跨域
+	AllowOrigins     string
+	AllowMethods     string
+	AllowHeaders     string
+	AllowCredentials bool
+	ExposeHeaders    string
+	MaxAge           int
 }
 
 type Server struct {
@@ -82,6 +96,16 @@ func (s *Server) setIgnoreUrls(urls []string) {
 
 func (s *Server) Init() *Server {
 	s.App = s.newFiber()
+
+	if s.config.CorsEnable {
+		s.App.Use(cors.New(cors.Config{
+			AllowOrigins:     s.config.AllowOrigins,
+			AllowHeaders:     s.config.AllowHeaders,
+			AllowMethods:     s.config.AllowMethods,
+			AllowCredentials: s.config.AllowCredentials,
+			MaxAge:           s.config.MaxAge,
+		}))
+	}
 
 	// 加密字符串
 	encStr := func(principal *UserPrincipal, s string) (string, error) {
