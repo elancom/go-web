@@ -131,19 +131,24 @@ func UseUserBody[T any](handle HandleP2[*UserPrincipal, T], supplier Supplier[T]
 }
 
 // UseUserPageParams UseUser 注入用户
-func UseUserPageParams[T any](handle HandleP3[*UserPrincipal, *lang.Page, *param.Params]) fiber.Handler {
+func UseUserPageParams(handle HandleP3[*UserPrincipal, *lang.Page, *param.Params]) fiber.Handler {
 	return Bind3(handle, ResolveUser, ResolvePage, ResolveParams)
 }
 
 // UseUserPageParam UseUser 注入用户
-func UseUserPageParam[T any](handle HandleP3[*UserPrincipal, *lang.Page, string], name string) fiber.Handler {
+func UseUserPageParam(handle HandleP3[*UserPrincipal, *lang.Page, string], name string) fiber.Handler {
 	return Bind3(handle, ResolveUser, ResolvePage, ResolveParam(name))
 }
 
 // UseUserPageParam2 UseUser 注入用户
-func UseUserPageParam2[T any](handle HandleP4[*UserPrincipal, *lang.Page, string, string], name1 string, name2 string) fiber.Handler {
+func UseUserPageParam2(handle HandleP4[*UserPrincipal, *lang.Page, string, string], name1 string, name2 string) fiber.Handler {
 	creator := newParamFuncCreator()
 	return Binds(handle, ResolveUser, ResolvePage, creator(name1), creator(name2))
+}
+
+// UseUserPageBody UseUser 注入用户
+func UseUserPageBody[T any](handle HandleP3[*UserPrincipal, *lang.Page, T], supplier Supplier[T]) fiber.Handler {
+	return Bind3(handle, ResolveUser, ResolvePage, ResolveBody[T](supplier))
 }
 
 // ResolveOptUser 用户解析(可选)
