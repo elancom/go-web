@@ -14,16 +14,18 @@ import (
 	"net/http"
 )
 
-var defConfig = Config{
-	SignEnable: true,
-	AuthEnable: true,
-	EncEnable:  true,
+func newDefaultConfig() Config {
+	return Config{
+		SignEnable: true,
+		AuthEnable: true,
+		EncEnable:  true,
 
-	// 地址过来
-	IgnoreUrls: make([]string, 0),
+		// 地址过来
+		IgnoreUrls: make([]string, 0),
 
-	// 跨域配置
-	CorsEnable: false,
+		// 跨域配置
+		CorsEnable: false,
+	}
 }
 
 func NewText(text string) *Text {
@@ -44,16 +46,13 @@ func NewServer(config ...Config) *Server {
 	s := new(Server)
 	s.ignoreUrls = make([]string, 0)
 
-	var conf = defConfig
+	var conf Config
 	if len(config) > 0 {
 		conf = config[0]
+	} else {
+		conf = newDefaultConfig()
 	}
-	s.config = Config{
-		SignEnable: conf.SignEnable,
-		AuthEnable: conf.AuthEnable,
-		EncEnable:  conf.EncEnable,
-		IgnoreUrls: conf.IgnoreUrls,
-	}
+	s.config = conf
 
 	// 权限忽略地址
 	s.setIgnoreUrls(s.config.IgnoreUrls)
