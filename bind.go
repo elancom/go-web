@@ -256,12 +256,13 @@ func ResolveFlag(c *fiber.Ctx) (*lang.Flag, error) {
 
 // 参数解析器构建器
 func newParamFuncCreator() func(name string) Resolver[string] {
-	var params *param.Params // 防重复解析参数
 	f := func(name string) Resolver[string] {
 		return func(c *fiber.Ctx) (string, error) {
 			if str.IsBlank(name) {
 				return "", nil
 			}
+			// 防重复解析参数
+			params, _ := c.Context().Value("__params_iE2_iA").(*param.Params)
 			if params == nil {
 				p, err := ResolveParams(c)
 				if err != nil {
