@@ -269,6 +269,7 @@ func newParamFuncCreator() func(name string) Resolver[string] {
 					return "", err
 				}
 				params = p
+				c.Context().SetUserValue("__params_iE2_iA", p)
 			}
 			return params.Get(name), nil
 		}
